@@ -1,4 +1,4 @@
-import { Button, Card, Col, Divider, Layout, Row, Spin } from "antd";
+import { Button, Card, Col, Divider, Input, Layout, Row, Spin } from "antd";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { FiAlertCircle, FiXCircle, FiCheckCircle, FiAlertOctagon } from "react-icons/fi";
@@ -18,10 +18,12 @@ const ListPage = () => {
 
   const [userDetails, setUserDetails] = useState({});
   const [zoneDetails, setZoneDetails] = useState([]);
+  const [filteredFileList, setFilteredFileList] = useState([]);
   const [selectedFile, setSelectedFile] = useState({});
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [displayLoader, setDisplayLoader] = useState(true);
   const [filter, setFilter] = useState("To Be Visited");
+  const [searchFilter, setSearchFilter] = useState("");
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user-ashara"));
@@ -32,6 +34,17 @@ const ListPage = () => {
       getFileListBySubSector(user["GROUP CODE"]);
     }
   }, []);
+
+  useEffect(() => {
+    setFilteredFileList(zoneDetails.filter(val => val["VISIT STATUS"] === filter).filter(value => {
+      if (!!searchFilter) {
+        return JSON.stringify(Object.values(value))
+          .toLowerCase()
+          .includes(searchFilter)
+      }
+      return true
+    }))
+  }, [filter, zoneDetails, searchFilter])
 
   const getFileListBySubSector = async (zone) => {
     const finalData = [];
@@ -205,12 +218,21 @@ const ListPage = () => {
             </Col>
           </Row>
 
+          <div className="w-full my-8">
+            <Input.Search
+              placeholder="enter text to search"
+              allowClear
+              onChange={(e) => setSearchFilter(e.target.value)}
+              size="large"
+            />
+          </div>
+
           <div className="w-full flex items-start my-8">
             <h3 className="text-2xl capitalize">{filter + " list"}</h3>
             <h3 className="text-2xl mx-1">:</h3>
           </div>
 
-          {zoneDetails
+          {filteredFileList
             .filter(
               (value) => value["VISIT STATUS"] === filter
             )

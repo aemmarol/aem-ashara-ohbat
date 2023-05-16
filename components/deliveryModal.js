@@ -1,6 +1,7 @@
 import Airtable from "airtable";
-import { Button, Col, Form, Input, Modal, Row, Select } from "antd";
-import { useEffect, useState } from "react";
+import { Button, Col, Form, Input, Modal, Row, Select, message } from "antd";
+import { useState } from "react";
+import moment from "moment";
 
 export const DeliveryModal = ({
   showDeliveryModal,
@@ -10,7 +11,7 @@ export const DeliveryModal = ({
 }) => {
   const airtableUserBase = new Airtable({
     apiKey: process.env.NEXT_PUBLIC_AIRTABLE_API_KEY,
-  }).base("appuvQQm0IIbrHpSo");
+  }).base("apptK8T882icYTvY7");
   const fileTableList = airtableUserBase("File List");
 
   const [deliveryForm] = Form.useForm();
@@ -19,28 +20,34 @@ export const DeliveryModal = ({
 
   const onFinish = async (values) => {
     let data = {
-      status: values.status,
+      "VISIT STATUS": values.status,
+      "COMMENTS": values.summary,
+      "isFormSubmitted": "YES",
+      "DATE OF VISIT": moment(new Date()).format("YYYY-MM-DD"),
     };
-    if (values.returnMsg) {
-      data["reasonForReturn"] = values.returnMsg;
+    if (values.newAddress) {
+      data["ADDRESS CHANGE"] = values.newAddress;
     }
-    await fileTableList.update(
+
+    fileTableList.update(
       [
         {
           id: fileValue.id,
           fields: data,
         },
       ],
-      function (err) {
+      async function (err) {
         if (err) {
-          console.error(err);
+          message.error(err.message)
           return;
         }
+        await callback();
+        handleClose();
       }
     );
 
-    await callback();
-    handleClose();
+
+
   };
 
   const handleSelectChange = (e) => {
@@ -49,7 +56,7 @@ export const DeliveryModal = ({
 
   return (
     <Modal
-      title="Update Delivery Status"
+      title="Update Visit Status"
       visible={showDeliveryModal}
       onCancel={handleClose}
       footer={null}
@@ -57,23 +64,15 @@ export const DeliveryModal = ({
       <Row className="mb-8" gutter={[4, 4]}>
         <Col xs={24}>
           <span className="text-xs">Name</span>
-          <p className="text-sm">{fileValue.full_name}</p>
+          <p className="text-sm">{fileValue["HOF Name"]}</p>
         </Col>
         <Col xs={12}>
           <span className="text-xs">File No</span>
           <p className="text-sm">{fileValue.file_number}</p>
         </Col>
         <Col xs={12}>
-          <span className="text-xs">Building</span>
-          <p className="text-sm">{fileValue.building}</p>
-        </Col>
-        <Col xs={12}>
-          <span className="text-xs">Room No</span>
-          <p className="text-sm">{fileValue.room_no}</p>
-        </Col>
-        <Col xs={12}>
-          <span className="text-xs">Mobile Number</span>
-          <p className="text-sm">{fileValue.mobile_no}</p>
+          <span className="text-xs">Contact</span>
+          <p className="text-sm">{fileValue["HOF contact"]}</p>
         </Col>
       </Row>
       <Form
@@ -93,18 +92,19 @@ export const DeliveryModal = ({
           ]}
         >
           <Select onChange={handleSelectChange}>
-            <Select.Option value="Delivered">Delivered</Select.Option>
-            <Select.Option value="Returned">Returned</Select.Option>
+            <Select.Option value="Completed">Completed</Select.Option>
+            <Select.Option value="Not Available">Not Available</Select.Option>
+            <Select.Option value="Address Change">Address Change</Select.Option>
           </Select>
         </Form.Item>
 
-        {selectValue === "Returned" ? (
+        {selectValue === "Address Change" ? (
           <Form.Item
-            label="Reason for return"
-            name="returnMsg"
+            label="New Address"
+            name="newAddress"
             rules={[
               {
-                required: true,
+                required: false,
                 message: "Please enter reason for return!",
               },
             ]}
@@ -112,6 +112,20 @@ export const DeliveryModal = ({
             <Input.TextArea />
           </Form.Item>
         ) : null}
+
+        <Form.Item
+          label="Visit Summary"
+          name="summary"
+          extra="write comments for visit"
+          rules={[
+            {
+              required: true,
+              message: "Please enter summary!",
+            },
+          ]}
+        >
+          <Input.TextArea />
+        </Form.Item>
 
         <Form.Item>
           <Button

@@ -54,7 +54,7 @@ export default function Login() {
           <Image src="/jamaatLogo.png" alt="logo" width={150} height={150} />
         </div>
 
-        <h3 className="text-2xl text-center mb-8">Ashara Ohbat 1444</h3>
+        <h3 className="text-2xl text-center mb-8">Ashara Ohbat</h3>
 
 
         <Form
